@@ -7,6 +7,7 @@ import time
 from tokenizers import Tokenizer
 import numpy as np
 from tqdm import tqdm
+import re
 
 import gensim.downloader as api
 
@@ -51,8 +52,19 @@ class CountFeatureExtractor(FeatureExtractor):
         Output: Counter({0: 2, 1: 1, 2: 0})
         (In the above case, the token "foo" is not in the text, so its count is 0.)
         """
-        raise Exception("TODO: Implement this method")
-
+        # get token to id dictioary
+        vocab = self.tokenizer.id_to_token
+        vocabID = self.tokenizer.token_to_id
+        features_dict = {key[0]: 0 for key in vocab.items()}
+        features = Counter(features_dict)
+        tokens = re.findall(r"\w+|[.,!?;]", text)
+        for word in tokens:
+            # get word id
+            if (word,) in vocab.values():
+                id = vocabID[(word,)]
+                features[id] += 1
+        # return counter object
+        return Counter({k: v for k, v in features.items() if v > 0})
 
 class CustomFeatureExtractor(FeatureExtractor):
     """
