@@ -53,18 +53,13 @@ class CountFeatureExtractor(FeatureExtractor):
         (In the above case, the token "foo" is not in the text, so its count is 0.)
         """
         # get token to id dictioary
-        vocab = self.tokenizer.id_to_token
-        vocabID = self.tokenizer.token_to_id
-        features_dict = {key[0]: 0 for key in vocab.items()}
-        features = Counter(features_dict)
-        tokens = re.findall(r"\w+|[.,!?;]", text)
-        for word in tokens:
-            # get word id
-            if (word,) in vocab.values():
-                id = vocabID[(word,)]
-                features[id] += 1
-        # return counter object
-        return Counter({k: v for k, v in features.items() if v > 0})
+        tokens = self.tokenizer.tokenize(text)
+        token_ids = [self.tokenizer.token_to_id.get(token, None) for token in tokens]
+
+        # Filter out any tokens that are not in the vocabulary
+        token_ids = [tid for tid in token_ids if tid is not None]
+
+        return Counter(token_ids)
 
 class CustomFeatureExtractor(FeatureExtractor):
     """
@@ -193,7 +188,13 @@ class LogisticRegressionClassifier(SentimentClassifier):
         sigmoid_score = sigmoid(5) = 0.993...
         Output: 1
         """
-        raise Exception("TODO: Implement this method")
+
+        feature_counts = self.featurizer.extract_features(text)
+        score = sum(self.weights[feature] * count for feature, count in feature_counts.items()) + self.bias
+        sigmoid_score = sigmoid(score)
+        return 1 if sigmoid_score >= 0.5 else 0
+
+        # raise Exception("TODO: Implement this method")
 
     def set_weights(self, weights: np.ndarray):
         """
@@ -233,7 +234,23 @@ class LogisticRegressionClassifier(SentimentClassifier):
         set `self.weights`: [-1.5, 1.25, 1.75]
         set `self.bias`: -0.25
         """
-        raise Exception("TODO: Implement this method")
+        weight_grads = np.zeros_like(self.weights, dtype = np.float64)
+        bias_grad = 0
+        batch_size = len(batch_exs)
+
+        for ex in batch_exs:
+            feature_counts = self.featurizer.extract_features(ex.words)
+            score = sum(self.weights[feature] * count for feature, count in feature_counts.items()) + self.bias
+            sigmoid_score = sigmoid(score)
+            error = sigmoid_score - ex.label
+            for feature, count in feature_counts.items():
+                weight_grads[feature] += error * count
+            bias_grad += error
+        
+        self.weights -= (learning_rate / batch_size) * weight_grads
+        self.bias -= (learning_rate / batch_size) * bias_grad
+
+        # raise Exception("TODO: Implement this method")
 
 
 def get_accuracy(predictions: List[int], labels: List[int]) -> float:
