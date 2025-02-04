@@ -242,6 +242,7 @@ class LogisticRegressionClassifier(SentimentClassifier):
             feature_counts = self.featurizer.extract_features(ex.words)
             score = sum(self.weights[feature] * count for feature, count in feature_counts.items()) + self.bias
             sigmoid_score = sigmoid(score)
+            # replace lines above w predict method
             error = sigmoid_score - ex.label
             for feature, count in feature_counts.items():
                 weight_grads[feature] += error * count
