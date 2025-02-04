@@ -7,7 +7,7 @@ import time
 from tokenizers import Tokenizer
 import numpy as np
 from tqdm import tqdm
-import re
+import random
 
 import gensim.downloader as api
 
@@ -55,8 +55,6 @@ class CountFeatureExtractor(FeatureExtractor):
         # get token to id dictioary
         tokens = self.tokenizer.tokenize(text)
         token_ids = [self.tokenizer.token_to_id.get(token, None) for token in tokens]
-
-        # Filter out any tokens that are not in the vocabulary
         token_ids = [tid for tid in token_ids if tid is not None]
 
         return Counter(token_ids)
@@ -257,6 +255,18 @@ class LogisticRegressionClassifier(SentimentClassifier):
         self.bias -= (learning_rate / batch_size) * bias_grad
 
         # raise Exception("TODO: Implement this method")
+    def get_top_features(self, num_features) -> List[str]:
+        # sort the features by positive value
+        
+        weights_id = [(i, self.weights[i])for i in range(len(self.weights))]
+        weights_id = sorted(weights_id, key=lambda x: x[1], reverse=True)
+        top_weights = weights_id[:num_features]
+        top_features = []
+
+    def get_get_bottom_features(self, num_features) -> List[str]:
+        weights_id = [(i, self.weights[i])for i in range(len(self.weights))]
+        weights_id = sorted(weights_id, key=lambda x: x[1], reverse=False)
+        bottom_weights = weights_id[num_features:]
 
 
 def get_accuracy(predictions: List[int], labels: List[int]) -> float:
@@ -302,7 +312,9 @@ def train_logistic_regression(
     # Initialize the model and
     # any other variables you want to keep track of
     ##########################################
-    raise Exception("TODO: Implement this section")
+    model = LogisticRegressionClassifier(feat_extractor)
+    saved_model = model
+    best_dev_acc = 0
 
     ##########################################
     # Learning rate scheduler
@@ -322,9 +334,7 @@ def train_logistic_regression(
         # with the same elements but in a random order
         # This step helps prevent overfitting
         ##########################################
-        shuffled_train_exs = []
-        raise Exception("TODO: Implement this section")
-
+        shuffled_train_exs = random.shuffle(train_exs)
         ##########################################
         # Iterate over batches of training examples
         ##########################################
@@ -340,7 +350,7 @@ def train_logistic_regression(
             # Update the weights and bias of the model using this batch of examples and the current learning rate
             # (hint: this is running a training step with a batch of examples)
             ##########################################
-            raise Exception("TODO: Implement this section")
+            model.training_step(batch_exs, cur_learning_rate)
 
         ##########################################
         # Evaluate on the dev set
@@ -348,7 +358,12 @@ def train_logistic_regression(
         # you may find the run_model_over_dataset 
         # and get_accuracy functions helpful
         ##########################################
-        raise Exception("TODO: Implement this section")
+        labels = [ex.label for ex in dev_exs]
+        predictions = run_model_over_dataset(model, dev_exs)
+        cur_dev_acc = get_accuracy(predictions, labels)
+        if (cur_dev_acc > best_dev_acc):
+            saved_model = model
+            best_dev_acc = cur_dev_acc
 
         ##########################################
         # Log any metrics you want here, tqdm will
@@ -359,8 +374,10 @@ def train_logistic_regression(
         # this step is helpful for debugging and making sure you are saving the best model so far
         # at the end of training, your 'best_dev_acc' should be the best accuracy on the dev set
         ##########################################
-        metrics = {}
-        raise Exception("TODO: Implement this section")
+        metrics = {
+            "best_dev_acc": best_dev_acc,
+            "cur_dev_acc": cur_dev_acc,
+        }
 
         # if metrics is not empty, update the progress bar
         if len(metrics) > 0:
@@ -370,7 +387,8 @@ def train_logistic_regression(
     # Set the weights and bias of the model to
     # the best model so far by dev accuracy
     ##########################################
-    raise Exception("TODO: Implement this section")
+    model.set_weights(saved_model.get_weights)
+    model.set_bias(saved_model.get_bias)
 
     return model
 

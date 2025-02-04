@@ -146,7 +146,7 @@ class NgramTokenizer(Tokenizer):
         # raise Exception("TODO: Implement this method")
 
 if __name__ == "__main__":
-    with jsonlines.open("data/imdb_dev.txt", "r") as reader:
+    with jsonlines.open("data/imdb_train.txt", "r") as reader:
         dataset = list(reader)
 
     dataset = dataset[:500]
