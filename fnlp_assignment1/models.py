@@ -66,8 +66,9 @@ class CustomFeatureExtractor(FeatureExtractor):
     Custom feature extractor that extracts features from a text using a custom tokenizer.
     """
 
-    def __init__(self, tokenizer: Tokenizer):
+    def __init__(self, tokenizer: Tokenizer, n: int = 2):
         self.tokenizer = tokenizer
+        self.n = n  # n-gram size
 
     def __len__(self):
         return len(self.tokenizer)
@@ -77,7 +78,9 @@ class CustomFeatureExtractor(FeatureExtractor):
         TODO: Implement your own custom feature extractor. The returned format should be the same as in CountFeatureExtractor,
         a Counter mapping from feature ids to their values.
         """
-        raise Exception("TODO: Implement this method")
+        tokens = self.tokenizer.tokenize(text)
+        ngrams = [' '.join(tokens[i:i+self.n]) for i in range(len(tokens) - self.n + 1)]
+        return Counter(ngrams)
 
 
 class MeanPoolingWordVectorFeatureExtractor(FeatureExtractor):
