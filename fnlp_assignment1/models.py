@@ -242,15 +242,17 @@ class LogisticRegressionClassifier(SentimentClassifier):
         batch_size = len(batch_exs)
 
         for ex in batch_exs:
+            # get features
             feature_counts = self.featurizer.extract_features(ex.words)
-            score = sum(self.weights[feature] * count for feature, count in feature_counts.items()) + self.bias
-            sigmoid_score = sigmoid(score)
-            # replace lines above w predict method
-            error = sigmoid_score - ex.label
+            # make a prediction
+            prediction = self.predict(ex.words)
+            # get the error
+            error = prediction - ex.label
             for feature, count in feature_counts.items():
                 weight_grads[feature] += error * count
             bias_grad += error
         
+        # gradient descent
         self.weights -= (learning_rate / batch_size) * weight_grads
         self.bias -= (learning_rate / batch_size) * bias_grad
 
