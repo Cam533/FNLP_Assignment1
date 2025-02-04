@@ -88,7 +88,17 @@ class NgramTokenizer(Tokenizer):
         Input: "This movie was really bad, but bad in a fun way, so I loved it."
         Output: [16999, 51610, 39000, 44191, 89954, 14539, 50931]
         """
-        raise Exception("TODO: Implement this method")
+
+        words = convert_text_to_words(text)
+        ngrams = [tuple(words[i:i + self.n]) for i in range(len(words) - self.n + 1)]
+
+        filtered_ngrams = [ngram for ngram in ngrams if ngram in self.token_to_id]
+        if return_token_ids:
+            return [self.token_to_id[ngram] for ngram in filtered_ngrams]
+
+        return filtered_ngrams
+
+        # raise Exception("TODO: Implement this method")
 
     def train(self, corpus: List[str]):
         """
@@ -109,13 +119,31 @@ class NgramTokenizer(Tokenizer):
         set self.token_to_id: {"This": 0, "movie": 1, "was": 2, "good": 3, "bad": 4}
         set self.id_to_token: {0: "This", 1: "movie", 2: "was", 3: "good", 4: "bad"}
         """
-        raise Exception("TODO: Implement this method")
+
+        token_counts = defaultdict(int)
+        for text in corpus:
+            words = convert_text_to_words(text)
+            ngrams = [tuple(words[i:i + self.n]) for i in range(len(words) - self.n + 1)]
+
+            for ngram in ngrams:
+                token_counts[ngram] += 1
+        
+        sorted_ngrams = sorted(token_counts.items(), key=lambda item: item[1], reverse=True)
+        if self.vocab_size != -1:
+            sorted_ngrams = sorted_ngrams[:self.vocab_size]
+
+        self.token_to_id = {ngram: idx for idx, (ngram, _) in enumerate(sorted_ngrams)}
+        self.id_to_token = {idx: ngram for ngram, idx in self.token_to_id.items()}
+
+        # raise Exception("TODO: Implement this method")
 
     def __len__(self):
         """
         TODO: Return the number of tokens in the vocabulary.
         """
-        raise Exception("TODO: Implement this method")
+        return len(self.token_to_id)
+
+        # raise Exception("TODO: Implement this method")
 
 if __name__ == "__main__":
     with jsonlines.open("data/imdb_train.txt", "r") as reader:
