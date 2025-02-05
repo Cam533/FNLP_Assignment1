@@ -8,6 +8,8 @@ from tokenizers import Tokenizer
 import numpy as np
 from tqdm import tqdm
 import random
+import string
+from nltk.corpus import stopwords
 
 import gensim.downloader as api
 
@@ -63,22 +65,27 @@ class CustomFeatureExtractor(FeatureExtractor):
     """
     Custom feature extractor that extracts features from a text using a custom tokenizer.
     """
-
-    def __init__(self, tokenizer: Tokenizer, n: int = 2):
+    def __init__(self, tokenizer: Tokenizer):
         self.tokenizer = tokenizer
-        self.n = n  # n-gram size
+        import nltk
+        nltk.download('stopwords')
+        self.stop_words = set(stopwords.words("english"))
 
     def __len__(self):
         return len(self.tokenizer)
-
+    
     def extract_features(self, text: str) -> Counter:
         """
         TODO: Implement your own custom feature extractor. The returned format should be the same as in CountFeatureExtractor,
         a Counter mapping from feature ids to their values.
         """
+        text = text.lower()
+        text = text.translate(str.maketrans('', '', string.punctuation))
         tokens = self.tokenizer.tokenize(text)
-        ngrams = [' '.join(tokens[i:i+self.n]) for i in range(len(tokens) - self.n + 1)]
-        return Counter(ngrams)
+        tokens = [token for token in tokens if token not in self.stop_words]
+        token_ids = [self.tokenizer.token_to_id.get(token, None) for token in tokens]
+        token_ids = [tid for tid in token_ids if tid is not None]
+        return Counter(token_ids)
 
 
 class MeanPoolingWordVectorFeatureExtractor(FeatureExtractor):
