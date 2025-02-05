@@ -334,7 +334,8 @@ def train_logistic_regression(
         # with the same elements but in a random order
         # This step helps prevent overfitting
         ##########################################
-        shuffled_train_exs = random.shuffle(train_exs)
+        shuffled_train_exs = train_exs[:]  
+        random.shuffle(shuffled_train_exs)
         ##########################################
         # Iterate over batches of training examples
         ##########################################
@@ -387,8 +388,8 @@ def train_logistic_regression(
     # Set the weights and bias of the model to
     # the best model so far by dev accuracy
     ##########################################
-    model.set_weights(saved_model.get_weights)
-    model.set_bias(saved_model.get_bias)
+    model.set_weights(saved_model.get_weights())
+    model.set_bias(saved_model.get_bias())
 
     return model
 
