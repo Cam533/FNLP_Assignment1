@@ -56,6 +56,7 @@ class CountFeatureExtractor(FeatureExtractor):
         """
         # get token to id dictioary
         tokens = self.tokenizer.tokenize(text)
+        print(tokens)
         token_ids = [self.tokenizer.token_to_id.get(token, None) for token in tokens]
         token_ids = [tid for tid in token_ids if tid is not None]
 
@@ -64,28 +65,73 @@ class CountFeatureExtractor(FeatureExtractor):
 class CustomFeatureExtractor(FeatureExtractor):
     """
     Custom feature extractor that extracts features from a text using a custom tokenizer.
+    Instead we will do character n-gram
     """
     def __init__(self, tokenizer: Tokenizer):
         self.tokenizer = tokenizer
-        import nltk
-        nltk.download('stopwords')
-        self.stop_words = set(stopwords.words("english"))
+        self.features = Counter({0: 0, 1: 0, 2: 0, 3: 0})
 
     def __len__(self):
-        return len(self.tokenizer)
+        return len(self.features)
     
     def extract_features(self, text: str) -> Counter:
         """
         TODO: Implement your own custom feature extractor. The returned format should be the same as in CountFeatureExtractor,
         a Counter mapping from feature ids to their values.
+
+        Instead we will count these features
+        words with negative prefixes
+        words with positive prefixes
+        words with negative suffix
+        words with positive suffix
         """
-        text = text.lower()
-        text = text.translate(str.maketrans('', '', string.punctuation))
+        neg_prefix = ["a", "dis", "il", "im", "in", "ir", "non", "un", "mis"]
+        pos_prefixes = [
+            "pro",
+            "well",
+            "super",
+            "ex",
+            "pre",
+            "over",
+            "ultra"
+        ]
+        positive_suffixes = [
+            "ful",
+            "able",
+            "ous",
+            "ic",
+            "ive",
+            "est",
+            "ment",
+            "ness",
+            "ly",
+            "ty"
+        ]
+        neg_suffix = ["less"]
         tokens = self.tokenizer.tokenize(text)
-        tokens = [token for token in tokens if token not in self.stop_words]
-        token_ids = [self.tokenizer.token_to_id.get(token, None) for token in tokens]
-        token_ids = [tid for tid in token_ids if tid is not None]
-        return Counter(token_ids)
+        for tuple in tokens:
+            word = tuple[0]
+            for prefix in neg_prefix:
+                if word.startswith(prefix):
+                    self.features[0] += 1
+            
+            for prefix in pos_prefixes:
+                if word.startswith(prefix):
+                    self.features[1] += 1
+            
+            for suffix in neg_suffix:
+                if word.endswith(suffix):
+                    self.features[2] += 1
+            
+            for suffix in positive_suffixes:
+                if word.endswith(suffix):
+                    self.features[3] += 1
+
+
+        return self.features
+
+
+        
 
 
 class MeanPoolingWordVectorFeatureExtractor(FeatureExtractor):
